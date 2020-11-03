@@ -53,9 +53,8 @@ class Bot:
             for group in await app.groupList():
                 if group.id in GroupTokens:
                     t = GroupTokens[group.id]
-                    if t not in self.token_client:
-                        self.token_client[t] = BigFun(t)
-                        self.token_group[t].append(group)
+                    self.token_client[t] = BigFun(t)
+                    self.token_group[t].append(group)
 
         @self.bcc.receiver("GroupMessage")
         async def group_message_handler(
@@ -78,6 +77,30 @@ class Bot:
                         msg += "\n({}) {} [{:,}]".format(
                             row['number'], row['name'], row['damage']
                         )
+
+                    x = [Plain("%s #%d\n进度：L%d-%s (%d/%d)\n" % (
+                        data['clan_info']['name'],
+                        data['clan_info']['last_ranking'],
+                        data['boss_info']['lap_num'],
+                        data['boss_info']['name'],
+                        data['boss_info']['current_life'],
+                        data['boss_info']['total_life'],
+                    )), Plain(msg)]
+
+                    await app.sendGroupMessage(group, MessageChain(__root__=x))
+            if message.asDisplay().startswith("进度"):
+                if group.id in GroupTokens:
+                    t = GroupTokens[group.id]
+                    bf = self.token_client[t]
+                    data = bf.fetch_clan_status()
+                    day_report = bf.fetch_day_report()
+
+                    total_number = sum([x['number'] for x in day_report])
+                    est_number = len(day_report) * 3
+
+                    msg = "今日出刀 (%s/%s)" % (
+                        total_number, est_number
+                    )
 
                     x = [Plain("%s #%d\n进度：L%d-%s (%d/%d)\n" % (
                         data['clan_info']['name'],
